@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2005
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HdTelNvrDaemon", "HdTelNvrDaemon\HdTelNvrDaemon.csproj", "{B24E6C8B-847E-43AD-8397-4FC184CA7FBB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B24E6C8B-847E-43AD-8397-4FC184CA7FBB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B24E6C8B-847E-43AD-8397-4FC184CA7FBB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B24E6C8B-847E-43AD-8397-4FC184CA7FBB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B24E6C8B-847E-43AD-8397-4FC184CA7FBB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BF85AD3A-5268-4403-A17E-9B93B7976E75}
+	EndGlobalSection
+EndGlobal
