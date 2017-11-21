@@ -51,11 +51,16 @@ namespace HdTelNvrDaemon
                 int bytes = 0;
                 int MessageCount = 0;
 
+                bool isRunning = true;
+                bool isDescriptionDone = false; 
+
+                Process ffmpegProcess = new Process();
+
                 // get remote client IP
                 IPEndPoint ipep = (IPEndPoint)clientSocket.Client.RemoteEndPoint;
                 IPAddress ipa = ipep.Address;
 
-                while (true)
+                while (isRunning)
                 {
                     MessageCount++;
                     stream = clientSocket.GetStream();
@@ -90,12 +95,14 @@ namespace HdTelNvrDaemon
                                 if (OnReceived != null)
                                     OnReceived(msg);
 
+                                isDescriptionDone = true;
+
                                 break;
 
                             case 0x01: // request
                                        // 1) Get request data
-                                int requestLength = buffer[1];
-                                string requestValue = System.Text.Encoding.UTF8.GetString(buffer, 5, requestLength);
+                                UInt32 requestLength = BitConverter.ToUInt32(buffer, 1);
+                                string requestValue = System.Text.Encoding.UTF8.GetString(buffer, 5, (int)requestLength);
 
                                 msg = "request message : " + requestValue;
                                 if (OnReceived != null)
@@ -119,7 +126,10 @@ namespace HdTelNvrDaemon
                                         responseValueClass.Params.Log = "streaming start";
 
                                         // ffmpeg
-
+                                        ProcessStartInfo startInfo = new ProcessStartInfo("ffmpeg.exe");
+                                        startInfo.WindowStyle = ProcessWindowStyle.Normal;
+                                        startInfo.Arguments = "-re -thread_queue_size 4 -i " + channelList[requestedVideoChannel-1] + " -vcodec copy -an -payload_type 97 -f rtp rtp://" + ipa.ToString() + ":" + responseValueClass.Params.MediaPortForVideo +"?pkt_size=1200";
+                                        ffmpegProcess = Process.Start(startInfo);
                                         //
 
                                         var serializer = new JavaScriptSerializer();
@@ -139,24 +149,28 @@ namespace HdTelNvrDaemon
                                     case "StopStream":
                                         responseValue = "{\"SessionID\":" + thisSessionId + ", \"TransactionID\":" + requestValueClass.TransactionID + ", \"Result\":true}";
                                         responseType = 0x02;
-                                        responseLength = (UInt32)descriptionMsg.Length;
+                                        responseLength = (UInt32)responseValue.Length;
                                         responseData[0] = responseType;
                                         Buffer.BlockCopy(BitConverter.GetBytes(responseLength), 0, responseData, 1, sizeof(UInt32));
                                         Buffer.BlockCopy(Encoding.UTF8.GetBytes(responseValue), 0, responseData, 5, responseValue.Length);
 
                                         // kill ffmpeg
-
+                                        if (ffmpegProcess != null)
+                                        {
+                                            ffmpegProcess.Kill();
+                                        }
                                         //
 
                                         msg = "response message : " + responseValue;
                                         if (OnReceived != null)
                                             OnReceived(msg);
 
+                                        isRunning = false; // To close TcpClient...
                                         break;
                                     case "Heartbeat":
                                         responseValue = "{\"SessionID\":" + thisSessionId + ", \"TransactionID\":" + requestValueClass.TransactionID + ", \"Result\":true}";
                                         responseType = 0x02;
-                                        responseLength = (UInt32)descriptionMsg.Length;
+                                        responseLength = (UInt32)responseValue.Length;
                                         responseData[0] = responseType;
                                         Buffer.BlockCopy(BitConverter.GetBytes(responseLength), 0, responseData, 1, sizeof(UInt32));
                                         Buffer.BlockCopy(Encoding.UTF8.GetBytes(responseValue), 0, responseData, 5, responseValue.Length);
@@ -198,9 +212,9 @@ namespace HdTelNvrDaemon
                             OnReceived("");
                         }
                     }
-                    else
+                    else if (bytes == 0 && isDescriptionDone == false)
                     {
-                        msg = "Zero data received from IP " + ipa.ToString() + ", Try to send description data...";
+                        msg = "No Description Done and Zero data received from IP " + ipa.ToString() + ", Try to send description data...";
 
                         if (OnReceived != null)
                             OnReceived(msg);
@@ -221,6 +235,8 @@ namespace HdTelNvrDaemon
                         msg = "description response message : " + responseValue;
                         if (OnReceived != null)
                             OnReceived(msg);
+
+                        isDescriptionDone = true;
 
                         // response to client
                         msg = "Server to client(" + clientNo.ToString() + ") " + MessageCount.ToString();
@@ -265,6 +281,16 @@ namespace HdTelNvrDaemon
 
                 if (OnCalculated != null)
                     OnCalculated();
+            }
+
+            // close TcpClient
+            if (OnReceived != null)
+                OnReceived(">> Closed client " + clientNo);
+
+            if (clientSocket != null)
+            {
+                clientSocket.Close();
+                stream.Close();
             }
         }
     }
