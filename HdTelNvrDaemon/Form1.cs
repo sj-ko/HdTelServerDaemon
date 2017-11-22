@@ -21,27 +21,29 @@ namespace HdTelNvrDaemon
         TcpListener serverSocket = null;
         TcpClient clientSocket = null;
 
+        string serverIp = "127.0.0.1";
+        int serverPort = 9999;
         string[] channelUrlList = new string[4]; // max 4 channel
 
         public Form1()
         {
             InitializeComponent();
 
-            ReadChannelList();
+            ReadConfig();
 
             // socket start
             new Thread(delegate ()
             {
-                TcpServer(IPAddress.Any, 9100);
+                TcpServer(IPAddress.Parse(serverIp), serverPort);
             }).Start();
         }
 
-        private void TcpServer(IPAddress serverIp, int port)
+        private void TcpServer(IPAddress ip, int port)
         {
-            serverSocket = new TcpListener(serverIp, port);
+            serverSocket = new TcpListener(ip, port);
             clientSocket = default(TcpClient);
             serverSocket.Start();
-            DisplayText(">> Server Started");
+            DisplayText(">> Server Started. IP is " + serverIp + " Port is " + serverPort);
 
             while (true)
             {
@@ -80,18 +82,29 @@ namespace HdTelNvrDaemon
             {
                 richTextBox_log.BeginInvoke(new MethodInvoker(delegate
                 {
+                    if (richTextBox_log.TextLength > 10000)
+                    {
+                        richTextBox_log.Clear();
+                    }
                     richTextBox_log.AppendText(text + Environment.NewLine);
+                    richTextBox_log.ScrollToCaret();
                 }));
             }
             else
+            {
+                if (richTextBox_log.TextLength > 10000)
+                {
+                    richTextBox_log.Clear();
+                }
                 richTextBox_log.AppendText(text + Environment.NewLine);
-
+                richTextBox_log.ScrollToCaret();
+            }
         }
 
-        private void ReadChannelList()
+        private void ReadConfig()
         {
             XmlDocument xml = new XmlDocument();
-            xml.Load(@".\CameraChannel.xml");
+            xml.Load(@".\config.xml");
             XmlNodeList nodeList = xml.GetElementsByTagName("Channel");
 
             foreach (XmlNode node in nodeList)
@@ -103,6 +116,14 @@ namespace HdTelNvrDaemon
             foreach (string addr in channelUrlList)
             {
                 DisplayText("Channel : " + addr);
+            }
+
+            nodeList = xml.GetElementsByTagName("Server");
+
+            foreach (XmlNode node in nodeList)
+            {
+                serverIp = node["Address"].InnerText;
+                serverPort = Convert.ToInt32(node["Port"].InnerText, 10);
             }
 
         }

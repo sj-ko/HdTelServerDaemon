@@ -52,13 +52,19 @@ namespace HdTelNvrDaemon
                 int MessageCount = 0;
 
                 bool isRunning = true;
-                bool isDescriptionDone = false; 
+                //bool isDescriptionDone = false;
+
+                DateTime sessionStartTime;
 
                 Process ffmpegProcess = new Process();
 
                 // get remote client IP
                 IPEndPoint ipep = (IPEndPoint)clientSocket.Client.RemoteEndPoint;
                 IPAddress ipa = ipep.Address;
+
+                // send descripton message first
+                SendDescription(clientSocket.GetStream(), descriptionMsg);
+                //isDescriptionDone = true;
 
                 while (isRunning)
                 {
@@ -78,7 +84,7 @@ namespace HdTelNvrDaemon
                         // handle request
                         byte responseType;
                         UInt32 responseLength;
-                        string responseValue;
+                        string responseValue = "";
                         byte[] responseData = new byte[1024];
                         switch (buffer[0])
                         {
@@ -95,7 +101,7 @@ namespace HdTelNvrDaemon
                                 if (OnReceived != null)
                                     OnReceived(msg);
 
-                                isDescriptionDone = true;
+                                //isDescriptionDone = true;
 
                                 break;
 
@@ -118,10 +124,15 @@ namespace HdTelNvrDaemon
                                     case "StartStream":
                                         thisSessionId = requestValueClass.SessionID;
                                         requestedVideoChannel = requestValueClass.Params.Channel;
+                                        heartbeatTimeout = requestValueClass.Params.Heartbeat;
 
                                         responseValueClass.SessionID = thisSessionId;
                                         responseValueClass.TransactionID = requestValueClass.TransactionID;
                                         responseValueClass.Result = "true";
+                                        responseValueClass.Params = requestValueClass.Params;
+                                        responseValueClass.Params.Resolution = "QVGA";
+                                        responseValueClass.Params.VideoCODEC = "h.264";
+                                        responseValueClass.Params.FrameRate = 10;
                                         responseValueClass.Params.MaxFrameSize = requestValueClass.Params.MaxFrameSize;
                                         responseValueClass.Params.Log = "streaming start";
 
@@ -144,6 +155,8 @@ namespace HdTelNvrDaemon
                                         msg = "response message : " + responseValue;
                                         if (OnReceived != null)
                                             OnReceived(msg);
+
+                                        sessionStartTime = DateTime.UtcNow;
 
                                         break;
                                     case "StopStream":
@@ -202,7 +215,7 @@ namespace HdTelNvrDaemon
                             OnReceived(msg);
 
                         byte[] sbuffer = responseData; // Encoding.Unicode.GetBytes(msg);
-                        stream.Write(sbuffer, 0, sbuffer.Length);
+                        stream.Write(sbuffer, 0, 1 + sizeof(UInt32) + responseValue.Length); //sbuffer.Length);
                         stream.Flush();
 
                         msg = " >> " + msg;
@@ -212,6 +225,7 @@ namespace HdTelNvrDaemon
                             OnReceived("");
                         }
                     }
+#if false
                     else if (bytes == 0 && isDescriptionDone == false)
                     {
                         msg = "No Description Done and Zero data received from IP " + ipa.ToString() + ", Try to send description data...";
@@ -244,7 +258,7 @@ namespace HdTelNvrDaemon
                             OnReceived(msg);
 
                         byte[] sbuffer = responseData; // Encoding.Unicode.GetBytes(msg);
-                        stream.Write(sbuffer, 0, sbuffer.Length);
+                        stream.Write(sbuffer, 0, 1 + sizeof(UInt32) + responseValue.Length); //sbuffer.Length);
                         stream.Flush();
 
                         msg = " >> " + msg;
@@ -254,6 +268,7 @@ namespace HdTelNvrDaemon
                             OnReceived("");
                         }
                     }
+#endif
                 }
             }
             catch (SocketException se)
@@ -291,6 +306,49 @@ namespace HdTelNvrDaemon
             {
                 clientSocket.Close();
                 stream.Close();
+            }
+        }
+
+        private void SendDescription(NetworkStream stream, string descriptionMsg)
+        {
+            string msg = "Connection from client. Try to send description data...";
+
+            if (OnReceived != null)
+                OnReceived(msg);
+
+            byte responseType;
+            UInt32 responseLength;
+            string responseValue;
+            byte[] responseData = new byte[1024];
+
+            // Make response data (description data)
+            responseType = 0x00;
+            responseLength = (UInt32)descriptionMsg.Length;
+            responseValue = descriptionMsg;
+            responseData[0] = responseType;
+            Buffer.BlockCopy(BitConverter.GetBytes(responseLength), 0, responseData, 1, sizeof(UInt32));
+            Buffer.BlockCopy(Encoding.UTF8.GetBytes(responseValue), 0, responseData, 5, responseValue.Length);
+
+            msg = "description response message : " + responseValue;
+            if (OnReceived != null)
+                OnReceived(msg);
+
+            //isDescriptionDone = true;
+
+            // response to client
+            msg = "Server to client(" + clientNo.ToString() + ") Description First";
+            if (OnReceived != null)
+                OnReceived(msg);
+
+            byte[] sbuffer = responseData; // Encoding.Unicode.GetBytes(msg);
+            stream.Write(sbuffer, 0, 1 + sizeof(UInt32) + responseValue.Length); //sbuffer.Length);
+            stream.Flush();
+
+            msg = " >> " + msg;
+            if (OnReceived != null)
+            {
+                OnReceived(msg);
+                OnReceived("");
             }
         }
     }

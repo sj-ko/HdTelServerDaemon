@@ -33,6 +33,9 @@
             // 
             // richTextBox_log
             // 
+            this.richTextBox_log.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBox_log.Location = new System.Drawing.Point(12, 33);
             this.richTextBox_log.Name = "richTextBox_log";
             this.richTextBox_log.Size = new System.Drawing.Size(619, 187);
@@ -44,6 +47,7 @@
             this.ClientSize = new System.Drawing.Size(674, 261);
             this.Controls.Add(this.richTextBox_log);
             this.Name = "Form1";
+            this.Text = "HdTelNvrDaemon_AxxonNext";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.ResumeLayout(false);
