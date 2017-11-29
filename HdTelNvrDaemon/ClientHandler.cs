@@ -136,15 +136,31 @@ namespace HdTelNvrDaemon
                                         responseValueClass.Params.MaxFrameSize = requestValueClass.Params.MaxFrameSize;
                                         responseValueClass.Params.Log = "streaming start";
 
+                                        msg = "startstream starts gstreamer...";
+                                        if (OnReceived != null)
+                                            OnReceived(msg);
+
                                         // ffmpeg
-                                        ProcessStartInfo startInfo = new ProcessStartInfo("ffmpeg.exe");
+                                        ProcessStartInfo startInfo = new ProcessStartInfo();
+                                        //startInfo.UseShellExecute = false;
+                                        startInfo.WorkingDirectory = @"C:\gstreamer\1.0\x86_64\bin";
+                                        startInfo.FileName = "gst-launch-1.0.exe";
                                         startInfo.WindowStyle = ProcessWindowStyle.Normal;
-                                        startInfo.Arguments = "-re -thread_queue_size 4 -i " + channelList[requestedVideoChannel-1] + " -vcodec copy -an -payload_type 97 -f rtp rtp://" + ipa.ToString() + ":" + responseValueClass.Params.MediaPortForVideo +"?pkt_size=1200";
+                                        startInfo.Arguments = "rtspsrc location=" + channelList[requestedVideoChannel - 1] + 
+                                            " ! queue ! rtph264depay ! h264parse ! rtph264pay config-interval=1 pt=97 mtu=1200 ! udpsink host=" + ipa.ToString() + " port=" + 
+                                            responseValueClass.Params.MediaPortForVideo + " sync=0";
+                                        //startInfo.Arguments = "-i " + channelList[requestedVideoChannel-1] + " -strict -2 -vcodec copy -an -payload_type 97 -f rtp rtp://" + ipa.ToString() + ":" + responseValueClass.Params.MediaPortForVideo +"?pkt_size=1200";
                                         ffmpegProcess = Process.Start(startInfo);
                                         //
 
+                                        msg = "gstreamer ok";
+                                        if (OnReceived != null)
+                                            OnReceived(msg);
+
                                         var serializer = new JavaScriptSerializer();
-                                        responseValue = serializer.Serialize(responseValueClass);
+                                        //responseValue = serializer.Serialize(responseValueClass);
+
+                                        responseValue = "{\"SessionID\":" + thisSessionId + ", \"TransactionID\":" + requestValueClass.TransactionID + ", \"Result\":true, \"Params\":{\"MaxFrameSize\":40000, \"Log\":\"streaming start.\"}}";
 
                                         responseType = 0x02;
                                         responseLength = (UInt32)responseValue.Length;
@@ -273,7 +289,10 @@ namespace HdTelNvrDaemon
             }
             catch (SocketException se)
             {
-                Trace.WriteLine(string.Format("doHandle - SocketException : {0}", se.Message));
+                //Trace.WriteLine(string.Format("doHandle - SocketException : {0}", se.Message));
+                string msg = "doHandle - SocketException " + se.Message;
+                if (OnReceived != null)
+                    OnReceived(msg);
 
                 if (clientSocket != null)
                 {
@@ -286,7 +305,10 @@ namespace HdTelNvrDaemon
             }
             catch (Exception ex)
             {
-                Trace.WriteLine(string.Format("doHandle - Exception : {0}", ex.Message));
+                //Trace.WriteLine(string.Format("doHandle - Exception : {0}", ex.Message));
+                string msg = "doHandle - Exception " + ex.Message;
+                if (OnReceived != null)
+                    OnReceived(msg);
 
                 if (clientSocket != null)
                 {

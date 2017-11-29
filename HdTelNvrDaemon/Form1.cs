@@ -23,7 +23,7 @@ namespace HdTelNvrDaemon
 
         string serverIp = "127.0.0.1";
         int serverPort = 9999;
-        string[] channelUrlList = new string[4]; // max 4 channel
+        string[] channelUrlList = new string[50]; // max 50 channel
 
         public Form1()
         {
@@ -113,9 +113,11 @@ namespace HdTelNvrDaemon
                 channelUrlList[number - 1] = node["Address"].InnerText;
             }
 
+            int i = 0;
             foreach (string addr in channelUrlList)
             {
-                DisplayText("Channel : " + addr);
+                i++;
+                DisplayText(i + " Channel : " + addr);
             }
 
             nodeList = xml.GetElementsByTagName("Server");
