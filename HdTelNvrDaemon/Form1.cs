@@ -40,10 +40,27 @@ namespace HdTelNvrDaemon
 
         private void TcpServer(IPAddress ip, int port)
         {
-            serverSocket = new TcpListener(ip, port);
-            clientSocket = default(TcpClient);
-            serverSocket.Start();
-            DisplayText(">> Server Started. IP is " + serverIp + " Port is " + serverPort);
+            try
+            {
+                serverSocket = new TcpListener(ip, port);
+                clientSocket = default(TcpClient);
+                serverSocket.Start();
+                DisplayText(">> Server Started. IP is " + serverIp + " Port is " + serverPort);
+            }
+            catch (SocketException se)
+            {
+                Trace.WriteLine(string.Format("InitSocket - SocketException : {0}", se.Message));
+                MessageBox.Show("Server socket init error. " + se.Message + " Check Server's IP Address.");
+                Application.Exit();
+                return;
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine(string.Format("InitSocket - Exception : {0}", ex.Message));
+                MessageBox.Show("Unknown error. " + ex.Message);
+                Application.Exit();
+                return;
+            }
 
             while (true)
             {
