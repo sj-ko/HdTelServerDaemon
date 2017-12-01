@@ -145,7 +145,7 @@ namespace HdTelNvrDaemon
                                         //startInfo.UseShellExecute = false;
                                         startInfo.WorkingDirectory = @"C:\gstreamer\1.0\x86_64\bin";
                                         startInfo.FileName = "gst-launch-1.0.exe";
-                                        startInfo.WindowStyle = ProcessWindowStyle.Normal;
+                                        startInfo.WindowStyle = ProcessWindowStyle.Hidden;
                                         startInfo.Arguments = "rtspsrc location=" + channelList[requestedVideoChannel - 1] + 
                                             " ! queue ! rtph264depay ! h264parse ! rtph264pay config-interval=1 pt=97 mtu=1200 ! udpsink host=" + ipa.ToString() + " port=" + 
                                             responseValueClass.Params.MediaPortForVideo + " sync=0";
